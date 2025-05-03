@@ -40,24 +40,29 @@ struct context {
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
+/**
+ * 进程控制块结构体 - 存储进程的所有相关信息
+ * 在xv6中，每个进程都由一个proc结构体表示，包含了进程的所有状态信息
+ */
 struct proc {
-  uint sz;                     // Size of process memory (bytes)
-  pde_t* pgdir;                // Page table
-  char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
-  int pid;                     // Process ID
-  struct proc *parent;         // Parent process
-  struct trapframe *tf;        // Trap frame for current syscall
-  struct context *context;     // swtch() here to run process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
+  uint sz;                     // 进程内存大小（字节数）
+  pde_t* pgdir;                // 页表指针，指向进程的页目录
+  char *kstack;                // 内核栈底指针，每个进程都有自己的内核栈
+  enum procstate state;        // 进程状态（UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE）
+  int pid;                     // 进程ID，唯一标识一个进程
+  struct proc *parent;         // 父进程指针，指向创建此进程的进程
+  struct trapframe *tf;        // 陷阱帧指针，保存进入内核前的用户上下文
+  struct context *context;     // 上下文指针，用于进程切换（swtch）
+  void *chan;                  // 如果不为零，表示进程在此通道上睡眠等待
+  int killed;                  // 如果不为零，表示进程已被标记为要终止
+  struct file *ofile[NOFILE];  // 打开的文件数组，存储进程打开的所有文件
+  struct inode *cwd;           // 当前工作目录的inode指针
+  char name[16];               // 进程名称，主要用于调试
 
-  int inuse;
-  int tickets;
-  int ticks;
+  // 彩票调度(Lottery Scheduling)相关字段
+  int inuse;                   // 标记此结构体是否正在使用
+  int tickets;                 // 进程持有的彩票数量，决定获得CPU时间的概率
+  int ticks;                   // 进程已使用的CPU时钟周期数，用于统计和性能分析
 };
 
 // Process memory is laid out contiguously, low addresses first:

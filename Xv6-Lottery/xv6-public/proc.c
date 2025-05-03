@@ -17,26 +17,61 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+/**
+ * 系统中所有可运行进程持有的彩票总数
+ * 在彩票调度算法中，这个变量用于:
+ * 1. 计算随机选择进程时的范围上限(0到total_tickets)
+ * 2. 当进程状态变化时(如新增、退出、睡眠、唤醒)，相应调整彩票总数
+ * 3. 确保随机数生成时的概率分布与各进程彩票数成正比
+ */
 int total_tickets;
 
+/**
+ * 设置指定进程的彩票数量并更新系统彩票总数
+ * 
+ * 此函数会先从total_tickets中减去进程原来的彩票数，
+ * 然后为进程分配新的彩票数，并将新数量加回total_tickets，
+ * 以保持系统彩票总数的准确性
+ * 
+ * @param pp 要设置彩票数量的进程
+ * @param n 要设置的彩票数量
+ */
 void setproctickets(struct proc *pp, int n) {
-  total_tickets -= pp->tickets;
-  pp->tickets = n;
-  total_tickets += pp->tickets;
+  total_tickets -= pp->tickets;  // 先减去原有彩票数
+  pp->tickets = n;               // 设置新的彩票数
+  total_tickets += pp->tickets;  // 加上新的彩票数到总数中
 }
 
+/**
+ * 当进程进入睡眠状态时，临时保存其彩票
+ * 
+ * 当进程睡眠时，它不参与CPU调度竞争，因此需要从
+ * 系统总彩票数中减去该进程的彩票数，以确保调度
+ * 公平性和随机性的正确计算
+ * 
+ * @param pp 要保存彩票的睡眠进程
+ */
 void storetickets(struct proc* pp) {
   if(pp->state != SLEEPING) {
     panic("Not sleeping at store tickets!");
   }
-  total_tickets -= pp->tickets;
+  total_tickets -= pp->tickets;  // 从总彩票数中减去该进程的彩票数
 }
 
+/**
+ * 当进程从睡眠状态被唤醒时，恢复其彩票
+ * 
+ * 当进程重新变为可运行状态时，需要将其彩票数
+ * 重新加回到系统总彩票数中，使其能够重新参与
+ * CPU调度竞争
+ * 
+ * @param pp 要恢复彩票的被唤醒进程
+ */
 void restoretickets(struct proc* pp) {
   if(pp->state != SLEEPING) {
     panic("Not sleeping at restore tickets!");
   }
-  total_tickets += pp->tickets;
+  total_tickets += pp->tickets;  // 将进程的彩票数重新加入总彩票数
 }
 
 void

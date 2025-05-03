@@ -385,58 +385,91 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+/**
+ * 内存页保护函数 - 将指定地址范围内的页面标记为只读
+ * 
+ * 该函数实现了类似Linux中mprotect系统调用的功能，
+ * 用于将指定内存区域设置为只读，防止写入操作。
+ * 这对于实现写时复制(copy-on-write)等高级内存管理功能非常重要。
+ * 
+ * @param addr 需要保护的内存区域的起始地址，必须页对齐
+ * @param len 需要保护的页面数量
+ * @return 成功返回0，失败返回-1
+ */
 int mprotect(void* addr, int len) {
-  struct proc* proc = myproc();
+  struct proc* proc = myproc();  // 获取当前进程
 
+  // 参数验证：检查长度是否合法以及地址范围是否超出进程地址空间
   if(len <= 0 || (int)addr + len * PGSIZE > proc->sz) {
     cprintf("\nbad addr!\n");
     return -1;
   }
 
+  // 参数验证：检查地址是否页对齐
   if((int)addr % PGSIZE != 0) {
     cprintf("\nnot aligned!\n");
     return -1;
   }
 
   pte_t* pte;
+  // 遍历指定范围内的所有页面
   for(int i = (int)addr; i < (int)addr + PGSIZE * len; i += PGSIZE) {
+    // 在页表中查找对应的页表项
     pte = walkpgdir(proc->pgdir, (void*)i, 0);
 
+    // 检查页面是否存在且属于用户空间
     if(pte && *pte & PTE_U && *pte & PTE_P) {
-      *pte &= ~PTE_W;
+      *pte &= ~PTE_W;  // 清除写权限位，使页面变为只读
     } else {
-      return -1;
+      return -1;  // 页面不存在或不可访问
     }
   }
 
+  // 刷新TLB以使保护生效
   lcr3(V2P(proc->pgdir));
   return 0;
 }
 
+/**
+ * 内存页取消保护函数 - 将指定地址范围内的页面恢复为可写
+ * 
+ * 该函数是mprotect的逆操作，用于恢复之前被保护为只读的内存页的写权限。
+ * 在写时复制(copy-on-write)等内存管理机制中，当需要实际修改内存时使用。
+ * 
+ * @param addr 需要取消保护的内存区域的起始地址，必须页对齐
+ * @param len 需要取消保护的页面数量
+ * @return 成功返回0，失败返回-1
+ */
 int munprotect(void* addr, int len) {
-  struct proc* proc = myproc();
+  struct proc* proc = myproc();  // 获取当前进程
 
+  // 参数验证：检查长度是否合法以及地址范围是否超出进程地址空间
   if(len <= 0 || (int)addr + len * PGSIZE > proc->sz) {
     cprintf("\nbad addr!\n");
     return -1;
   }
 
+  // 参数验证：检查地址是否页对齐
   if((int)addr % PGSIZE != 0) {
     cprintf("\nnot aligned!\n");
     return -1;
   }
 
   pte_t* pte;
+  // 遍历指定范围内的所有页面
   for(int i = (int)addr; i < (int)addr + PGSIZE * len; i += PGSIZE) {
+    // 在页表中查找对应的页表项
     pte = walkpgdir(proc->pgdir, (void*)i, 0);
 
+    // 检查页面是否存在且属于用户空间
     if(pte && *pte & PTE_U && *pte & PTE_P) {
-      *pte |= PTE_W;
+      *pte |= PTE_W;  // 设置写权限位，使页面变为可写
     } else {
-      return -1;
+      return -1;  // 页面不存在或不可访问
     }
   }
 
+  // 刷新TLB以使权限修改生效
   lcr3(V2P(proc->pgdir));
   return 0;
 }

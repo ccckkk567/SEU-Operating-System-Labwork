@@ -5,11 +5,17 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "spinlock.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
 extern pde_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
+
+extern struct {
+  struct spinlock lock;
+  int count;
+} readcount;
 
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
@@ -30,6 +36,8 @@ main(void)
   tvinit();        // trap vectors
   binit();         // buffer cache
   fileinit();      // file table
+  initlock(&readcount.lock, "readcount");  // initialize readcount lock
+  readcount.count = 0;  // initialize counter
   ideinit();       // disk 
   startothers();   // start other processors
   kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()

@@ -6,9 +6,9 @@
  *   reverse <input>    - 从input文件读取，输出到标准输出
  *   reverse <input> <output> - 从input文件读取，输出到output文件
  */
-#include <stddef.h>
-#include <stdio.h>
-#include <sys/stat.h>  // 用于获取文件信息
+#include <stddef.h>    //引入NULL等
+#include <stdio.h>     //FILE结构体等
+#include <sys/stat.h>  // 用于获取文件信息(inode号)和stat函数
 #include <stdlib.h>
 #include <string.h>
 

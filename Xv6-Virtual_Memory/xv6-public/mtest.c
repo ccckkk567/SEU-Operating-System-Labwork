@@ -4,18 +4,45 @@
 #include "fs.h"
 #include "mmu.h"
 
+/**
+ * 内存保护测试程序
+ * 
+ * 该程序测试mprotect和munprotect系统调用的功能：
+ * 1. 分配一页内存
+ * 2. 写入初始值
+ * 3. 设置内存保护
+ * 4. 尝试写入（应该失败）
+ * 5. 取消保护
+ * 6. 再次写入
+ */
 int main(int argc, char *argv[]) {
+    // 分配一页内存
     char* val = sbrk(0);
     sbrk(PGSIZE);
 
+    // 写入初始值
     *val = 5;
-    printf(1, "Start at %d\n", *val);
+    printf(1, "初始值: %d\n", *val);
 
-    mprotect((void*)val, 1);
-    munprotect((void*)val, 1);
+    // 设置内存保护
+    if(mprotect((void*)val, 1) < 0) {
+        printf(1, "mprotect失败\n");
+        exit();
+    }
 
+    // 尝试写入（应该失败）
     *val = 10;
-    printf(1, "Now is %d\n", *val);
+    printf(1, "保护后写入失败\n");
+
+    // 取消保护
+    if(munprotect((void*)val, 1) < 0) {
+        printf(1, "munprotect失败\n");
+        exit();
+    }
+
+    // 再次写入
+    *val = 10;
+    printf(1, "取消保护后写入成功: %d\n", *val);
 
     exit();
 }

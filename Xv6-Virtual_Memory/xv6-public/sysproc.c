@@ -90,22 +90,38 @@ sys_uptime(void)
   return xticks;
 }
 
+/**
+ * sys_mprotect - mprotect系统调用的包装函数
+ * 
+ * 该函数从用户空间获取参数并调用mprotect函数。
+ * 它负责参数验证和类型转换。
+ * 
+ * @return 成功返回0，失败返回-1
+ */
 int sys_mprotect(void) {
-  void* addr;
-  int len;
-  if(argptr(0, (char**)&addr, sizeof(void*)) < 0 || argint(1, &len) < 0) {
-    return -1;
-  }
-
-  return mprotect(addr, len);
+    void* addr;
+    int len;
+    // 从用户空间获取参数
+    if(argptr(0, (char**)&addr, sizeof(void*)) < 0 || argint(1, &len) < 0) {
+        return -1;
+    }
+    return mprotect(addr, len);
 }
 
+/**
+ * sys_munprotect - munprotect系统调用的包装函数
+ * 
+ * 该函数从用户空间获取参数并调用munprotect函数。
+ * 它负责参数验证和类型转换。
+ * 
+ * @return 成功返回0，失败返回-1
+ */
 int sys_munprotect(void) {
-  void* addr;
-  int len;
-  if(argptr(0, (char**)&addr, sizeof(void*)) < 0 || argint(1, &len) < 0) {
-    return -1;
-  }
-
-  return munprotect(addr, len);
+    void* addr;
+    int len;
+    // 从用户空间获取参数
+    if(argptr(0, (char**)&addr, sizeof(void*)) < 0 || argint(1, &len) < 0) {
+        return -1;
+    }
+    return munprotect(addr, len);
 }

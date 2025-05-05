@@ -54,16 +54,14 @@ trap(struct trapframe *tf)
     if(addr == 0){
       cprintf("pid %d %s: null pointer dereference at addr 0x%x\n",
               myproc()->pid, myproc()->name, addr);
-      myproc()->killed = 1;
-      return;
+      exit(); // 立即退出进程
     }
     
     // 检查是否是写保护错误
     if(tf->err & PTE_W){
       cprintf("pid %d %s: write to protected page at addr 0x%x\n",
               myproc()->pid, myproc()->name, addr);
-      myproc()->killed = 1;
-      return;
+      exit(); // 立即退出进程
     }
   }
 
